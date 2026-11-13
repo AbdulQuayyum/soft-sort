@@ -7,12 +7,13 @@ on:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         ruby: ['3.2', '3.3']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
@@ -22,3 +23,4 @@ jobs:
       - run: bundle exec ruby bin/soft-sort --help
       - run: bundle exec ruby bin/soft-sort version
       - run: gem build soft-sort.gemspec
+      - run: ruby script/installed_gem_smoke.rb soft-sort-1.0.0.gem

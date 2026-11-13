@@ -270,4 +270,16 @@ RSpec.describe SoftSort do
     expect(config.data.fetch('ai')).to eq('enabled' => false, 'provider' => 'none')
     expect(SoftSort::AI::DisabledProvider.new.classify(nil)).to be_nil
   end
+
+  it 'keeps watch previews read-only and waits for file stability' do
+    with_directory do |dir|
+      path = File.join(dir, 'watch.txt')
+      File.write(path, 'watch')
+      previews = []
+      SoftSort::DirectoryWatcher.new(dir, config: config, interval: 1, stability_window: 1)
+        .run(iterations: 2) { |items, apply| previews << [items, apply] }
+      expect(previews.last.last).to be(false)
+      expect(File).to exist(path)
+    end
+  end
 end

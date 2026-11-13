@@ -25,6 +25,7 @@
 - Added disabled-by-default AI provider interfaces and bounded PNG metadata support.
 - Added GitHub Actions CI for Ruby/RSpec/RuboCop, CLI smoke tests, gem builds,
   and macOS/Linux/Windows runner coverage.
+- Added isolated installed-gem smoke verification and release support documentation.
 
 ## 0.1.0 - 2026-10-16
 

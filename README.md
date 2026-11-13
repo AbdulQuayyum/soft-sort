@@ -127,13 +127,19 @@ bundle exec rspec
 bundle exec rubocop
 bundle exec ruby bin/soft-sort scan ./test-files
 bundle exec ruby bin/soft-sort plan ./test-files --recursive --format json
+gem build soft-sort.gemspec
+ruby script/installed_gem_smoke.rb soft-sort-1.0.0.gem
 ```
 
-The test suite uses temporary directories rather than personal folders and covers empty/single/nested scans, hidden files, symlinks, exclusions, temporary downloads, missing roots, extension/context classification, priority ambiguity, deterministic planning, already-organized files, configuration safety, CLI output/errors, JSON validity, and read-only behavior.
+The test suite uses temporary directories rather than personal folders and covers empty/single/nested scans, hidden files, symlinks, exclusions, temporary downloads, missing roots, extension/context classification, priority ambiguity, deterministic planning, already-organized files, configuration safety, CLI output/errors, JSON validity, read-only behavior, execution, undo, recovery reconciliation, malformed journals, date folders, collision renaming, bounded content evidence, PNG metadata, and disabled AI fallback.
 
-## Roadmap
+## Platform support and release status
 
-Milestone 2 will add an explicit `organize --apply` command, collision-safe moves, journaling, crash recovery, and undo. Milestone 3 will add SHA-256 duplicate detection, date organization, image/document metadata, and improved project recognition. Milestone 4 may add optional automation and user feedback. Milestone 5 covers RubyGems, Homebrew, cross-platform release testing, and an optional desktop interface.
+SoftSort requires Ruby 3.2 or newer. The source is designed for macOS, Linux, and Windows; hosted CI is configured for Ruby 3.2 and 3.3 on Ubuntu, macOS, and Windows. Local verification has been performed on macOS Apple Silicon. Hosted CI results must be checked before claiming a platform-specific release guarantee.
+
+Same-filesystem organization uses no-replace hard-link/unlink operations. Cross-filesystem moves are rejected rather than copied and deleted. Locking, timestamp precision, symlink behavior, hard-link permissions, and power-loss durability depend on the host filesystem. Watch mode is polling-based and preview-only unless `--apply` is supplied.
+
+The release artifact is built with `gem build soft-sort.gemspec`. The installed-gem smoke test verifies the executable outside the source load path. No publishing workflow is included; publishing requires explicit manual authorization.
 
 ## Contributing and license
 

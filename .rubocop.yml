@@ -19,3 +19,13 @@ Lint/StructNewOverride:
   Enabled: false
 Style/IfUnlessModifier:
   Enabled: false
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+Naming/MethodParameterName:
+  Enabled: false
+Lint/DuplicateBranch:
+  Enabled: false
+Style/Semicolon:
+  Enabled: false
+Style/RedundantBegin:
+  Enabled: false

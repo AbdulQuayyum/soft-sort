@@ -1,6 +1,6 @@
 # SoftSort
 
-SoftSort is a local-first, offline Ruby CLI that scans a user-selected directory and creates a deterministic, read-only organization plan. It classifies files from extensions and filename context, then proposes relative destinations without creating folders, moving files, deleting files, or reading complete file contents.
+SoftSort is a local-first, offline Ruby CLI that scans a selected directory, explains deterministic organization decisions, and—when explicitly requested—moves approved files into generated folders. It never follows symbolic links, silently overwrites files, or deletes files.
 
 ## Requirements and installation
 
@@ -25,9 +25,15 @@ soft-sort plan ~/Downloads
 soft-sort plan ~/Downloads --recursive
 soft-sort plan ~/Downloads --format json
 soft-sort plan ~/Downloads --config ./rules.yml --verbose
+soft-sort organize ~/Downloads --apply
+soft-sort duplicates ~/Downloads --recursive --format json
+soft-sort history ~/Downloads --limit 20
+soft-sort undo ~/Downloads --dry-run
+soft-sort stats ~/Downloads --format json
+soft-sort explain ~/Downloads/example.pdf
 ```
 
-`scan` reports discovered, eligible, excluded, categorized, and sized files. `plan` reports source, proposed destination, type, context, rule, confidence, action, and warnings. `--recursive` is opt-in. `--format json` emits only JSON on stdout; diagnostics go to stderr. `--verbose` is accepted for forward-compatible CLI diagnostics.
+`scan` reports discovered, eligible, excluded, categorized, and sized files. `plan` reports source, proposed destination, type, context, rule, confidence, action, and warnings. `organize` previews by default and performs approved moves only with `--apply`. `--recursive` is opt-in. `--format json` emits only JSON on stdout; diagnostics go to stderr.
 
 Example:
 
@@ -76,9 +82,9 @@ Destinations must be relative and cannot contain `..`. Safe YAML loading rejects
 
 ## Safety guarantees and limitations
 
-Milestone 0.1.0 is entirely read-only. It never follows symbolic links, leaves the selected root, executes scanned files, unpacks archives, transmits metadata, creates folders, moves or renames files, deletes duplicates, or modifies contents. Existing destination collisions and planned collisions are reported.
+SoftSort defaults to a dry run. With `organize --apply`, it creates only required destination folders and moves approved, non-sensitive, non-conflicting files. It verifies SHA-256 identity immediately before each move, refuses existing destinations, records append-only JSONL transactions under `.soft-sort`, and supports verified undo. It never follows symbolic links, leaves the selected root, executes scanned files, unpacks archives, transmits metadata, overwrites or deletes files, or moves protected credentials by default.
 
-This release does not implement file execution, transaction journals, undo, duplicate hashing, content extraction, image metadata, directory watching, or AI classification. Extension/name classification can be wrong and should be reviewed before any future execution milestone.
+Duplicate detection uses size grouping and streamed SHA-256 hashing but never deletes duplicates. Content extraction, image EXIF inspection, watch mode, AI providers, and automatic crash recovery remain disabled until they can be implemented with platform-specific safety guarantees. Extension/name classification can be wrong and should be reviewed.
 
 ## Project structure
 

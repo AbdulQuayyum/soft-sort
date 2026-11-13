@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    soft-sort (0.1.0)
+    soft-sort (1.0.0)
 
 GEM
   remote: https://rubygems.org/

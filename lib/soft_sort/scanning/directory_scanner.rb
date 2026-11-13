@@ -2,7 +2,7 @@
 
 module SoftSort
   class DirectoryScanner
-    DEFAULT_EXCLUDED = %w[.git node_modules .venv vendor/bundle __pycache__].freeze
+    DEFAULT_EXCLUDED = %w[.git node_modules .venv vendor/bundle __pycache__ .soft-sort].freeze
     DEFAULT_TEMP = %w[part crdownload download tmp].freeze
     attr_reader :root
 
@@ -32,7 +32,8 @@ module SoftSort
                                       stat.birthtime
                                     rescue StandardError
                                       nil
-                                    end, parent_directory: File.dirname(rel), eligible: reason.nil?, exclusion_reason: reason)
+                                    end, parent_directory: File.dirname(rel), eligible: reason.nil?, exclusion_reason: reason,
+                                    sensitive_reason: SensitiveFileDetector.reason(File.basename(path)))
         rescue SystemCallError => e
           warnings << "#{rel}: #{e.message}"
         end

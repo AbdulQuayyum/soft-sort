@@ -93,7 +93,7 @@ RSpec.describe SoftSort do
     with_directory do |dir|
       File.write(File.join(dir, 'report.pdf'), 'x')
       expect { expect(SoftSort::CLI.new(['--help']).run).to be_nil }.to output(/Usage/).to_stdout
-      expect { expect(SoftSort::CLI.new(['version']).run).to be_nil }.to output(/0\.1\.0/).to_stdout
+      expect { expect(SoftSort::CLI.new(['version']).run).to be_nil }.to output(/1\.0\.0/).to_stdout
       expect { expect(SoftSort::CLI.new(['scan', dir]).run).to be_nil }.to output(/Eligible: 1/).to_stdout
       expect { expect(SoftSort::CLI.new(['plan', dir, '--format', 'json']).run).to be_nil }
         .to output(/"files"/).to_stdout
@@ -106,6 +106,42 @@ RSpec.describe SoftSort do
       File.write(path, 'unchanged')
       expect(SoftSort::CLI.new(['scan', File.join(dir, 'missing')]).run).to eq(1)
       expect(File.read(path)).to eq('unchanged')
+    end
+  end
+
+  it 'organizes approved files, protects sensitive files, records history, and undoes safely' do
+    with_directory do |dir|
+      File.write(File.join(dir, 'invoice.txt'), 'invoice')
+      File.write(File.join(dir, '.env.production'), 'secret')
+      expect(SoftSort::CLI.new(['organize', dir, '--apply']).run).to be_nil
+      expect(File).to exist(File.join(dir, 'Finance', 'Invoices', 'invoice.txt'))
+      expect(File).to exist(File.join(dir, '.env.production'))
+      expect(SoftSort::TransactionJournal.new(dir).all.last['status']).to eq('completed')
+      SoftSort::UndoManager.new(dir).undo
+      expect(File).to exist(File.join(dir, 'invoice.txt'))
+    end
+  end
+
+  it 'detects duplicates by size and streamed SHA-256 hashing' do
+    with_directory do |dir|
+      File.write(File.join(dir, 'one.txt'), 'same')
+      File.write(File.join(dir, 'two.txt'), 'same')
+      files = SoftSort::DirectoryScanner.new(dir, config: config).scan[:files]
+      groups = SoftSort::DuplicateDetector.new(dir).find(files)
+      expect(groups.length).to eq(1)
+      expect(groups.first[:files]).to contain_exactly('one.txt', 'two.txt')
+    end
+  end
+
+  it 'rejects undo when a moved file was changed or its original path is occupied' do
+    with_directory do |dir|
+      File.write(File.join(dir, 'invoice.txt'), 'invoice')
+      scan = SoftSort::DirectoryScanner.new(dir, config: config).scan
+      plan = SoftSort::OrganizationPlanner.new(dir, config).plan(scan[:files])
+      SoftSort::Executor.new(dir).execute(plan, apply: true)
+      File.write(File.join(dir, 'invoice.txt'), 'new user file')
+      result = SoftSort::UndoManager.new(dir).undo
+      expect(result.first['status']).to eq('conflict')
     end
   end
 end

@@ -29,6 +29,8 @@ module SoftSort
 
       action = if destination == file.relative_path
                  'skip'
+               elsif file.sensitive_reason
+                 'review'
                elsif classification.requires_review
                  'review'
                else
@@ -37,7 +39,7 @@ module SoftSort
       { source: file.relative_path, destination: destination, type_category: classification.type_category,
         context_category: classification.context_category, matched_rule: classification.matched_rule,
         confidence: classification.confidence, action: action,
-        warning: classification.requires_review ? 'classification requires review' : nil }
+        warning: file.sensitive_reason || (classification.requires_review ? 'classification requires review' : nil) }
     end
   end
 end

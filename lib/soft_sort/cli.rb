@@ -2,61 +2,112 @@
 
 module SoftSort
   class CLI
-    def initialize(argv) = @argv = argv.dup
+    COMMANDS = %w[scan plan organize duplicates history undo recover stats explain].freeze
+
+    def initialize(argv)
+      @argv = argv.dup
+    end
 
     def run
-      return puts help if @argv.empty? || @argv.first == '--help' || @argv.first == '-h'
+      return puts help if @argv.empty? || %w[--help -h].include?(@argv.first)
       return puts "SoftSort #{VERSION}" if @argv.first == 'version'
 
       command = @argv.shift
-      raise Error, "unsupported command: #{command}" unless %w[scan plan].include?(command)
-
-      options = { recursive: false, format: 'text', config: nil, verbose: false }
-      parser = OptionParser.new do |o|
-        o.on('--recursive') { options[:recursive] = true }
-        o.on('--format FORMAT') { |v| options[:format] = v }
-        o.on('--config PATH') { |v| options[:config] = v }
-        o.on('--verbose') { options[:verbose] = true }
-        o.on('--help') do
-          puts o
-          exit
-        end
-      end
-      parser.parse!(@argv)
-
+      raise Error, "unsupported command: #{command}" unless COMMANDS.include?(command)
+      options = parse_options
       root = @argv.shift || '.'
       raise Error, "unexpected arguments: #{@argv.join(' ')}" unless @argv.empty?
-      unless %w[text json].include?(options[:format])
-        raise Error,
-              'format must be text or json'
-      end
-
       config = Configuration.load(options[:config])
-
-      scan = DirectoryScanner.new(root, config: config, recursive: options[:recursive]).scan
-      if command == 'scan'
-        categories = Hash.new(0)
-        scan[:files].select(&:eligible).each { |f| categories[f.extension.empty? ? 'Others' : f.extension] += 1 }
-        report = { root: File.expand_path(root), total: scan[:files].length, eligible: scan[:files].count(&:eligible), excluded: scan[:files].count do |f|
-          !f.eligible
-        end, bytes: scan[:files].select(&:eligible).sum(&:size), categories: categories, warnings: scan[:warnings] }
-      else
-        items = OrganizationPlanner.new(root, config).plan(scan[:files])
-
-        report = { root: File.expand_path(root), files: items, warnings: scan[:warnings] }
-      end
-      puts(if options[:format] == 'json'
-             JsonReporter.dump(report)
-           else
-             (command == 'scan' ? PreviewFormatter.scan(report) : PreviewFormatter.plan(report[:files]))
-           end)
+      dispatch(command, root, config, options)
     rescue Error, OptionParser::ParseError => e
       warn "soft-sort: #{e.message}"
       1
     end
 
     def help
-      "Usage: soft-sort <scan|plan|version> DIRECTORY [options]\n  --recursive  Include subdirectories\n  --format json  Emit JSON\n  --config PATH  Use YAML rules\n  --verbose  Show diagnostics"
+      <<~TEXT
+        Usage: soft-sort <command> DIRECTORY [options]
+          scan, plan, organize, duplicates, history, undo, recover, stats, explain
+          --recursive       Include subdirectories
+          --apply           Execute approved organization moves
+          --dry-run         Preview undo/recovery operations
+          --transaction ID  Select a transaction
+          --limit NUMBER    Limit history output
+          --format FORMAT   Emit text or json
+          --config PATH     Use YAML rules
+      TEXT
+    end
+
+    private
+
+    def parse_options
+      options = { recursive: false, format: 'text', config: nil, apply: false, dry_run: false, transaction: nil, limit: nil, verbose: false }
+      parser = OptionParser.new do |o|
+        o.on('--recursive') { options[:recursive] = true }
+        o.on('--apply') { options[:apply] = true }
+        o.on('--dry-run') { options[:dry_run] = true }
+        o.on('--transaction ID') { |v| options[:transaction] = v }
+        o.on('--limit NUMBER', Integer) { |v| options[:limit] = v }
+        o.on('--format FORMAT') { |v| options[:format] = v }
+        o.on('--config PATH') { |v| options[:config] = v }
+        o.on('--verbose') { options[:verbose] = true }
+      end
+      parser.parse!(@argv)
+      raise Error, 'format must be text or json' unless %w[text json].include?(options[:format])
+      options
+    end
+
+    def dispatch(command, root, config, options)
+      case command
+      when 'scan', 'plan', 'organize', 'stats', 'explain'
+        scan = DirectoryScanner.new(root, config: config, recursive: options[:recursive]).scan
+        items = OrganizationPlanner.new(root, config).plan(scan[:files])
+        return output(scan_report(scan, root), options, text: PreviewFormatter.scan(scan_report(scan, root))) if command == 'scan'
+        return output(plan_report(root, items, scan[:warnings]), options, text: PreviewFormatter.plan(items)) if command == 'plan'
+        if command == 'stats'
+          duplicates = DuplicateDetector.new(root).find(scan[:files])
+          return output(StatisticsReporter.build(scan, items, duplicates: duplicates), options)
+        end
+        return explain(root, items, options) if command == 'explain'
+
+        record = Executor.new(root).execute(items, apply: options[:apply])
+        output(record, options)
+      when 'duplicates'
+        scan = DirectoryScanner.new(root, config: config, recursive: options[:recursive]).scan
+        output(DuplicateDetector.new(root).find(scan[:files]), options)
+      when 'history', 'recover'
+        records = TransactionJournal.new(root).all
+        records = records.last(options[:limit]) if options[:limit]
+        output(records, options)
+      when 'undo'
+        result = UndoManager.new(root).undo(transaction_id: options[:transaction], dry_run: options[:dry_run])
+        output(result, options)
+      end
+    end
+
+    def scan_report(scan, root)
+      eligible = scan[:files].select(&:eligible)
+      { root: File.expand_path(root), total: scan[:files].length, eligible: eligible.length,
+        excluded: scan[:files].length - eligible.length, bytes: eligible.sum(&:size), warnings: scan[:warnings],
+        categories: eligible.group_by(&:extension).transform_values(&:length) }
+    end
+
+    def plan_report(root, items, warnings)
+      { root: File.expand_path(root), files: items, warnings: warnings }
+    end
+
+    def explain(root, items, options)
+      item = items.first
+      raise Error, 'no eligible files found' unless item
+      output(item.merge(root: File.expand_path(root)), options)
+    end
+
+    def output(value, options, text: nil)
+      if options[:format] == 'json'
+        puts JsonReporter.dump(value)
+      else
+        puts(text || (value.is_a?(Hash) ? value.map { |k, v| "#{k}: #{v}" }.join("\n") : value))
+      end
     end
   end
 end

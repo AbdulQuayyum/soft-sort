@@ -18,6 +18,7 @@ module SoftSort
 
     def categories = data.fetch('categories', {})
     def context_rules = Array(data['context_rules'])
+    def projects = data.fetch('projects', {})
     def exclusions = data.fetch('exclusions', {})
 
     def extension_categories
@@ -39,6 +40,11 @@ module SoftSort
       context_rules.each do |r|
         unless r.is_a?(Hash) && r['name'] && Array(r['keywords']).any? && safe_destination?(r['destination'].to_s)
           raise ConfigurationError, 'context rule is invalid'
+        end
+      end
+      projects.each_value do |project|
+        unless project.is_a?(Hash) && Array(project['aliases']).any? && safe_destination?(project['destination'].to_s)
+          raise ConfigurationError, 'project rule is invalid'
         end
       end
     end

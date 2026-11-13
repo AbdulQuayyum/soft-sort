@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'soft-sort'
-  s.version = '0.1.0'
+  s.version = '1.0.0'
   s.summary = 'A safe, local-first file organization planner'
   s.authors = ['SoftSort contributors']
   s.license = 'MIT'

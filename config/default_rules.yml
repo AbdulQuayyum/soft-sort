@@ -3,10 +3,15 @@ organization:
   mode: hybrid
   recursive: false
   dry_run: true
+  date_folders: false
+  date_format: year_month
+  date_source: auto
+  collision_policy: skip
 safety:
   follow_symlinks: false
   include_hidden: false
   overwrite: false
+  protect_existing_project_structures: true
 categories:
   Images: { extensions: [jpg, jpeg, png, gif, webp, heic, svg, tiff], destination: Images/Photos }
   Documents: { extensions: [pdf, doc, docx, txt, rtf, odt, epub, mobi, azw, azw3], destination: Documents }
@@ -57,6 +62,10 @@ filename_types:
   - { pattern: '^LICENSE(?:\.|$)', category: Documentation, destination: Documents/Documentation }
   - { pattern: '^\.env(?:\.|$)', category: Configuration, destination: Projects/Source/Configuration }
   - { pattern: '^(Makefile|Dockerfile|Procfile)$', category: Development Scripts, destination: Projects/Source/Scripts }
+content_inspection:
+  enabled: false
+  max_bytes: 1048576
+  min_signals: 2
 exclusions:
   directories: [.git, node_modules, .venv, vendor/bundle, __pycache__]
   extensions: [part, crdownload, download, tmp]

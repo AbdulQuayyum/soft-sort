@@ -6,6 +6,7 @@ module SoftSort
       @config = config
       @types = TypeClassifier.new(config)
       @contexts = ContextClassifier.new(config)
+      @content = ContentClassifier.new(config)
     end
 
     def classify(file)
@@ -19,6 +20,12 @@ module SoftSort
         destination = tied.length == 1 ? project_destination(top, type, type_dest) : type_dest
         return ClassificationResult.new(type_category: type,
                                         context_category: tied.length == 1 ? top['name'].to_s.capitalize : 'Review', destination: destination, matched_rule: tied.length == 1 ? top['name'] : 'ambiguous', confidence: tied.length == 1 ? 0.95 : 0.40, requires_review: tied.length != 1)
+      end
+      content = @content.classify(file)
+      if content
+        return ClassificationResult.new(type_category: content[:category], context_category: 'Content',
+                                        destination: content[:destination], matched_rule: content[:name],
+                                        confidence: content[:confidence], requires_review: false)
       end
       known = @types.known?(file)
       ClassificationResult.new(type_category: type, context_category: nil, destination: type_dest,

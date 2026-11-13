@@ -212,4 +212,46 @@ RSpec.describe SoftSort do
       expect(journal.warnings).to include(match(/malformed journal record/))
     end
   end
+
+  it 'adds deterministic date folders from modification timestamps' do
+    with_directory do |dir|
+      path = File.join(dir, 'photo.jpg')
+      File.write(path, 'image')
+      File.utime(Time.new(2024, 2, 3), Time.new(2024, 2, 3), path)
+      data = YAML.safe_load(File.read(File.expand_path('../config/default_rules.yml', __dir__)))
+      data['organization']['date_folders'] = true
+      data['organization']['date_source'] = 'modified'
+      data['organization']['date_format'] = 'year_month_day'
+      scan = SoftSort::DirectoryScanner.new(dir, config: config(data)).scan
+      plan = SoftSort::OrganizationPlanner.new(dir, config(data)).plan(scan[:files])
+      expect(plan.first[:destination]).to eq('Images/Photos/2024/02/03/photo.jpg')
+    end
+  end
+
+  it 'renames collisions only when explicitly configured' do
+    with_directory do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'Documents'))
+      File.write(File.join(dir, 'note.txt'), 'new')
+      File.write(File.join(dir, 'Documents', 'note.txt'), 'old')
+      data = YAML.safe_load(File.read(File.expand_path('../config/default_rules.yml', __dir__)))
+      data['organization']['collision_policy'] = 'rename'
+      scan = SoftSort::DirectoryScanner.new(dir, config: config(data)).scan
+      plan = SoftSort::OrganizationPlanner.new(dir, config(data)).plan(scan[:files])
+      expect(plan.first[:destination]).to eq('Documents/note (1).txt')
+      expect(plan.first[:action]).to eq('move')
+    end
+  end
+
+  it 'uses bounded local content evidence only when enabled' do
+    with_directory do |dir|
+      path = File.join(dir, 'document123.txt')
+      File.write(path, 'Invoice billing amount due')
+      data = YAML.safe_load(File.read(File.expand_path('../config/default_rules.yml', __dir__)))
+      data['content_inspection']['enabled'] = true
+      scan = SoftSort::DirectoryScanner.new(dir, config: config(data)).scan
+      result = SoftSort::RuleMatcher.new(config(data)).classify(scan[:files].first)
+      expect(result.destination).to eq('Finance/Invoices')
+      expect(result.matched_rule).to eq('invoice_content')
+    end
+  end
 end

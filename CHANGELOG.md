@@ -17,6 +17,10 @@
 - Added root-scoped locking, synchronized/fsynced JSONL journal writes, per-operation progress persistence, and filesystem reconciliation for interrupted moves.
 - Added read-only and apply-mode `recover` command with hash-verified recovery reporting.
 - Hardened moves and undo with same-filesystem no-replace hard-link/unlink operations and symlink rejection.
+- Added configurable year, year/month, and year/month/day destination folders.
+- Added opt-in bounded local content evidence for text, Markdown, CSV, JSON, and PDF files.
+- Added explicit `skip`, `review`, and deterministic `rename` collision policies.
+- Added advanced classification and collision regression coverage.
 
 ## 0.1.0 - 2026-10-16
 

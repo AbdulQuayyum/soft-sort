@@ -18,6 +18,7 @@ module SoftSort
       root = @argv.shift || '.'
       raise Error, "unexpected arguments: #{@argv.join(' ')}" unless @argv.empty?
       config = Configuration.load(options[:config])
+      config = override_config(config, options)
       dispatch(command, root, config, options)
     rescue Error, OptionParser::ParseError => e
       warn "soft-sort: #{e.message}"
@@ -35,13 +36,17 @@ module SoftSort
           --limit NUMBER    Limit history output
           --format FORMAT   Emit text or json
           --config PATH     Use YAML rules
+          --date-folders    Add configured date folders to destinations
+          --inspect-content Enable bounded local content evidence
+          --collision POLICY  Use skip, review, or rename collision handling
       TEXT
     end
 
     private
 
     def parse_options
-      options = { recursive: false, format: 'text', config: nil, apply: false, dry_run: false, transaction: nil, limit: nil, verbose: false }
+      options = { recursive: false, format: 'text', config: nil, apply: false, dry_run: false, transaction: nil, limit: nil, verbose: false,
+                  date_folders: false, inspect_content: false, collision: nil }
       parser = OptionParser.new do |o|
         o.on('--recursive') { options[:recursive] = true }
         o.on('--apply') { options[:apply] = true }
@@ -51,10 +56,25 @@ module SoftSort
         o.on('--format FORMAT') { |v| options[:format] = v }
         o.on('--config PATH') { |v| options[:config] = v }
         o.on('--verbose') { options[:verbose] = true }
+        o.on('--date-folders') { options[:date_folders] = true }
+        o.on('--inspect-content') { options[:inspect_content] = true }
+        o.on('--collision POLICY') { |v| options[:collision] = v }
       end
       parser.parse!(@argv)
       raise Error, 'format must be text or json' unless %w[text json].include?(options[:format])
       options
+    end
+
+    def override_config(config, options)
+      return config unless options[:date_folders] || options[:inspect_content] || options[:collision]
+
+      data = Marshal.load(Marshal.dump(config.data))
+      data['organization'] ||= {}
+      data['organization']['date_folders'] = true if options[:date_folders]
+      data['organization']['collision_policy'] = options[:collision] if options[:collision]
+      data['content_inspection'] ||= {}
+      data['content_inspection']['enabled'] = true if options[:inspect_content]
+      Configuration.new(data)
     end
 
     def dispatch(command, root, config, options)

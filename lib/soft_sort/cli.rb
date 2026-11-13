@@ -62,7 +62,7 @@ module SoftSort
       when 'scan', 'plan', 'organize', 'stats', 'explain'
         scan = DirectoryScanner.new(root, config: config, recursive: options[:recursive]).scan
         items = OrganizationPlanner.new(root, config).plan(scan[:files])
-        return output(scan_report(scan, root), options, text: PreviewFormatter.scan(scan_report(scan, root))) if command == 'scan'
+        return output(scan_report(scan, root, items), options, text: PreviewFormatter.scan(scan_report(scan, root, items))) if command == 'scan'
         return output(plan_report(root, items, scan[:warnings]), options, text: PreviewFormatter.plan(items)) if command == 'plan'
         if command == 'stats'
           duplicates = DuplicateDetector.new(root).find(scan[:files])
@@ -85,11 +85,11 @@ module SoftSort
       end
     end
 
-    def scan_report(scan, root)
+    def scan_report(scan, root, items)
       eligible = scan[:files].select(&:eligible)
       { root: File.expand_path(root), total: scan[:files].length, eligible: eligible.length,
         excluded: scan[:files].length - eligible.length, bytes: eligible.sum(&:size), warnings: scan[:warnings],
-        categories: eligible.group_by(&:extension).transform_values(&:length) }
+        categories: items.group_by { |item| item[:type_category] }.transform_values(&:length) }
     end
 
     def plan_report(root, items, warnings)

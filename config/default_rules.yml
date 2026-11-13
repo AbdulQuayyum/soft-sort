@@ -9,14 +9,23 @@ safety:
   overwrite: false
 categories:
   Images: { extensions: [jpg, jpeg, png, gif, webp, heic, svg, tiff], destination: Images/Photos }
-  Documents: { extensions: [pdf, doc, docx, txt, rtf, odt], destination: Documents }
+  Documents: { extensions: [pdf, doc, docx, txt, rtf, odt, epub, mobi, azw, azw3], destination: Documents }
   Spreadsheets: { extensions: [xls, xlsx, csv, ods], destination: Documents/Spreadsheets }
-  Presentations: { extensions: [ppt, pptx, odp], destination: Documents/Presentations }
   Videos: { extensions: [mp4, mov, avi, mkv, webm], destination: Media/Videos }
   Audio: { extensions: [mp3, wav, flac, aac, m4a], destination: Media/Audio }
-  Archives: { extensions: [zip, rar, 7z, tar, gz], destination: Archives }
-  Source Code: { extensions: [rb, py, js, jsx, ts, tsx, go, rs, java, html, css, json, yaml, yml], destination: Projects/Source }
-  Installers: { extensions: [dmg, pkg, exe, msi, deb, rpm], destination: Installers }
+  Archives: { extensions: [zip, rar, 7z, tar, gz, bz2, xz, tgz, iso, cab], destination: Archives }
+  Development: { extensions: [rb, py, go, js, jsx, ts, tsx, rs, java, c, h, cpp, cs, php, swift, kt, dart, lua, r, sql], destination: Projects/Source }
+  Documentation: { extensions: [md, markdown, rst, adoc, tex], destination: Documents/Documentation }
+  Development Scripts: { extensions: [sh, bash, zsh, fish, ps1, bat, cmd], destination: Projects/Source/Scripts }
+  Configuration: { extensions: [json, yaml, yml, toml, xml, plist, ini, conf, cfg, properties, env], destination: Projects/Source/Configuration }
+  Design: { extensions: [fig, sketch, ai, eps, psd, xd, indd], destination: Design }
+  Fonts: { extensions: [ttf, otf, woff, woff2], destination: Fonts }
+  Databases: { extensions: [db, sqlite, sqlite3, sqlitedb, mdb], destination: Data/Databases }
+  CAD: { extensions: [dwg, dxf, step, stp, iges, igs, stl, obj], destination: Design/CAD }
+  Source Code: { extensions: [rb, py, js, jsx, ts, tsx, go, rs, java, html, css], destination: Projects/Source }
+  Installers: { extensions: [dmg, pkg, exe, msi, deb, rpm, appimage], destination: Installers }
+  Presentations: { extensions: [ppt, pptx, odp, key], destination: Documents/Presentations }
+  Graphics: { extensions: [svg, psd, ai, eps], destination: Images/Graphics }
 context_rules:
   - { name: invoices, keywords: [invoice, receipt], destination: Finance/Invoices, priority: 100 }
   - { name: screenshots, keywords: [screenshot, screen_shot], destination: Images/Screenshots, priority: 90 }
@@ -24,6 +33,30 @@ context_rules:
   - { name: resumes, keywords: [resume, cv], destination: Personal/Resumes, priority: 80 }
   - { name: contracts, keywords: [contract, agreement], destination: Finance/Contracts, priority: 80 }
   - { name: reports, keywords: [report], destination: Documents/Reports, priority: 70 }
+projects:
+  civicwatch:
+    aliases: [civicwatch, civic-watch]
+    destination: Projects/CivicWatch
+    destinations:
+      Development: Projects/CivicWatch/Development
+      Development Scripts: Projects/CivicWatch/Development/Scripts
+      Configuration: Projects/CivicWatch/Development/Configuration
+      Documentation: Projects/CivicWatch/Documentation
+  giffy:
+    aliases: [giffy, giffyride]
+    destination: Projects/Giffy
+    destinations:
+      Development: Projects/Giffy/Development
+      Development Scripts: Projects/Giffy/Development/Scripts
+      Configuration: Projects/Giffy/Development/Configuration
+      Documentation: Projects/Giffy/Documentation
+      Images: Projects/Giffy/Images
+      Documents: Projects/Giffy/Documents
+filename_types:
+  - { pattern: '^README(?:\.|$)', category: Documentation, destination: Documents/Documentation }
+  - { pattern: '^LICENSE(?:\.|$)', category: Documentation, destination: Documents/Documentation }
+  - { pattern: '^\.env(?:\.|$)', category: Configuration, destination: Projects/Source/Configuration }
+  - { pattern: '^(Makefile|Dockerfile|Procfile)$', category: Development Scripts, destination: Projects/Source/Scripts }
 exclusions:
   directories: [.git, node_modules, .venv, vendor/bundle, __pycache__]
   extensions: [part, crdownload, download, tmp]

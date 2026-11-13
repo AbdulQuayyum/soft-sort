@@ -53,6 +53,43 @@ RSpec.describe SoftSort do
     end
   end
 
+  it 'recognizes documentation, scripts, configuration, development, design, and database formats' do
+    with_directory do |dir|
+      names = %w[guide.md deploy.sh settings.toml app.sql model.dwg icon.svg font.woff book.epub]
+      names.each { |name| File.write(File.join(dir, name), 'x') }
+      files = SoftSort::DirectoryScanner.new(dir, config: config).scan[:files]
+      results = files.to_h { |file| [file.extension, SoftSort::RuleMatcher.new(config).classify(file)] }
+      expect(results['md'].type_category).to eq('Documentation')
+      expect(results['sh'].type_category).to eq('Development Scripts')
+      expect(results['toml'].type_category).to eq('Configuration')
+      expect(results['sql'].type_category).to eq('Development')
+      expect(results['dwg'].type_category).to eq('CAD')
+      expect(results['woff'].type_category).to eq('Fonts')
+      expect(results['epub'].type_category).to eq('Documents')
+    end
+  end
+
+  it 'groups configured project files into project type subfolders' do
+    custom = YAML.safe_load(File.read(File.expand_path('../config/default_rules.yml', __dir__)))
+    custom['projects'] = { 'civicwatch' => { 'aliases' => ['civicwatch'], 'destination' => 'Projects/CivicWatch',
+                                              'destinations' => { 'Development Scripts' => 'Projects/CivicWatch/Development/Scripts' } } }
+    file = SoftSort::FileMetadata.new(filename: 'CivicWatch-deployment.sh', extension: 'sh', parent_directory: '.')
+    result = SoftSort::RuleMatcher.new(config(custom)).classify(file)
+    expect(result.destination).to eq('Projects/CivicWatch/Development/Scripts')
+  end
+
+  it 'protects sensitive files and established recursive project structures' do
+    with_directory do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'ExistingProject', 'lib'))
+      File.write(File.join(dir, '.env.production'), 'secret')
+      File.write(File.join(dir, 'ExistingProject', 'lib', 'app.rb'), 'puts 1')
+      files = SoftSort::DirectoryScanner.new(dir, config: config, recursive: true).scan[:files]
+      plan = SoftSort::OrganizationPlanner.new(dir, config).plan(files)
+      expect(plan.find { |item| item[:source] == 'ExistingProject/lib/app.rb' }[:action]).to eq('skip')
+      expect(plan).not_to include(a_hash_including(source: '.env.production'))
+    end
+  end
+
   it 'resolves contextual rules by priority and marks equal priorities ambiguous' do
     custom = {
       'categories' => { 'Documents' => { 'extensions' => ['txt'], 'destination' => 'Documents' } },

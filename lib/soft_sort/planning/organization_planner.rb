@@ -5,6 +5,7 @@ module SoftSort
     def initialize(root, config)
       @root = File.expand_path(root)
       @matcher = RuleMatcher.new(config)
+      @protect_existing = config.data.fetch('safety', {}).fetch('protect_existing_project_structures', true)
     end
 
     def plan(files)
@@ -29,6 +30,8 @@ module SoftSort
 
       action = if destination == file.relative_path
                  'skip'
+               elsif @protect_existing && file.parent_directory != '.'
+                 'skip'
                elsif file.sensitive_reason
                  'review'
                elsif classification.requires_review
@@ -39,7 +42,19 @@ module SoftSort
       { source: file.relative_path, destination: destination, type_category: classification.type_category,
         context_category: classification.context_category, matched_rule: classification.matched_rule,
         confidence: classification.confidence, action: action,
-        warning: file.sensitive_reason || (classification.requires_review ? 'classification requires review' : nil) }
+        warning: warning_for(file, classification) }
+    end
+
+    def warning_for(file, classification)
+      return file.sensitive_reason if file.sensitive_reason
+      return 'existing directory structure protected' if protected_structure?(file)
+      return 'classification requires review' if classification.requires_review
+
+      nil
+    end
+
+    def protected_structure?(file)
+      @protect_existing && file.parent_directory != '.'
     end
   end
 end

@@ -45,9 +45,11 @@ REVIEW   mystery.xyz -> Others/mystery.xyz (Others, 0.25)
 
 ## How classification works
 
-Type classification uses the extension only; it does not claim MIME or content verification. Supported groups include Images, Documents, Spreadsheets, Presentations, Videos, Audio, Archives, Source Code, and Installers. Unknown extensions use `Others` and require review.
+Type classification is YAML-driven and covers documents/e-books, images/graphics, spreadsheets, presentations, video, audio, archives, installers, fonts, design, CAD, databases, development languages, documentation, shell scripts, and configuration. It recognizes Markdown (`md`, `markdown`), shell scripts (`sh`, `bash`, `zsh`, `fish`), development formats (`rb`, `py`, `go`, `js`, `jsx`, `ts`, `tsx`, `sql`), configuration (`json`, `yaml`, `yml`, `toml`, `xml`, `plist`, `ini`, `conf`, `env`), and common format extensions. Extensionless files can use safe filename rules or a bounded signature read for PDF, ZIP, and shebang headers; SoftSort never executes them. Unknown extensions use `Others` and require review.
 
 Context classification tokenizes case-insensitive filenames using common separators. Rules are ordered by priority. The precedence is contextual rule, file type, then unknown fallback. Equal-priority contextual matches are marked `review` rather than chosen arbitrarily. Confidence is a deterministic evidence score, not a statistical probability.
+
+Projects are configured with aliases and optional type destinations. For example, a `CivicWatch-deployment.sh` file can resolve to `Projects/CivicWatch/Development/Scripts/`. Recursive mode protects files already inside an established directory tree by default, so existing project source and manifests are not scattered.
 
 Default destinations include `Images/Photos`, `Documents`, `Media/Videos`, `Media/Audio`, `Archives`, `Projects/Source`, `Installers`, and contextual destinations such as `Finance/Invoices`, `Images/Screenshots`, and `Documents/Reports`.
 
@@ -73,6 +75,13 @@ context_rules:
     keywords: [invoice, receipt]
     destination: Finance/Invoices
     priority: 100
+projects:
+  civicwatch:
+    aliases: [civicwatch, civic-watch]
+    destination: Projects/CivicWatch
+    destinations:
+      Development Scripts: Projects/CivicWatch/Development/Scripts
+      Development: Projects/CivicWatch/Development
 exclusions:
   directories: [node_modules]
   extensions: [part, crdownload]

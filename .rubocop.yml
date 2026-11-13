@@ -1,8 +1,13 @@
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
   TargetRubyVersion: 3.2
   NewCops: enable
   Exclude:
     - "spec/**/*"
+    - "vendor/**/*"
 Style/Documentation:
   Enabled: false
 Layout/LineLength:

@@ -2,6 +2,9 @@
 
 ## 1.0.0 - 2026-11-13
 
+- Fixed Ruby 3.2 development dependency compatibility by constraining Parallel to the 1.27 series.
+- Fixed scanning on systems without birth timestamps; unavailable creation dates remain nil and automatic date folders use modification time.
+- Excluded vendored dependencies from RuboCop while retaining its default exclusions.
 - Expanded YAML-driven file recognition across development, documentation,
   configuration, design, font, CAD, database, e-book, and media formats.
 - Added bounded extensionless filename/signature recognition without execution.

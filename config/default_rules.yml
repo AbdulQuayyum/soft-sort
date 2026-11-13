@@ -66,6 +66,9 @@ content_inspection:
   enabled: false
   max_bytes: 1048576
   min_signals: 2
+ai:
+  enabled: false
+  provider: none
 exclusions:
   directories: [.git, node_modules, .venv, vendor/bundle, __pycache__]
   extensions: [part, crdownload, download, tmp]

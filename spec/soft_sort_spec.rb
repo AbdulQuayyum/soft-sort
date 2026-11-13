@@ -254,4 +254,20 @@ RSpec.describe SoftSort do
       expect(result.matched_rule).to eq('invoice_content')
     end
   end
+
+  it 'reads bounded PNG dimensions without exposing or modifying image content' do
+    with_directory do |dir|
+      path = File.join(dir, 'image.png')
+      png = "\x89PNG\r\n\x1a\n" + [13].pack('N') + 'IHDR' + [0x20, 0x10].pack('N2')
+      File.binwrite(path, png)
+      file = SoftSort::DirectoryScanner.new(dir, config: config).scan[:files].first
+      expect(SoftSort::ImageMetadata.read(file)).to include(width: 32, height: 16, capture_time: nil)
+      expect(File.binread(path).bytes).to eq(png.bytes)
+    end
+  end
+
+  it 'keeps AI disabled by default and provides a no-op provider' do
+    expect(config.data.fetch('ai')).to eq('enabled' => false, 'provider' => 'none')
+    expect(SoftSort::AI::DisabledProvider.new.classify(nil)).to be_nil
+  end
 end

@@ -29,5 +29,8 @@ require_relative 'soft_sort/execution/recovery_manager'
 require_relative 'soft_sort/execution/undo_manager'
 require_relative 'soft_sort/duplicates/duplicate_detector'
 require_relative 'soft_sort/reporting/statistics_reporter'
+require_relative 'soft_sort/watching/directory_watcher'
+require_relative 'soft_sort/classification/ai_provider'
+require_relative 'soft_sort/metadata/image_metadata'
 require_relative 'soft_sort/cli'
 module SoftSort; end

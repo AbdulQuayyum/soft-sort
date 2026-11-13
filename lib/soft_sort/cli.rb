@@ -2,7 +2,7 @@
 
 module SoftSort
   class CLI
-    COMMANDS = %w[scan plan organize duplicates history undo recover stats explain].freeze
+    COMMANDS = %w[scan plan organize duplicates history undo recover stats explain watch].freeze
 
     def initialize(argv)
       @argv = argv.dup
@@ -28,7 +28,7 @@ module SoftSort
     def help
       <<~TEXT
         Usage: soft-sort <command> DIRECTORY [options]
-          scan, plan, organize, duplicates, history, undo, recover, stats, explain
+          scan, plan, organize, duplicates, history, undo, recover, stats, explain, watch
           --recursive       Include subdirectories
           --apply           Execute approved organization moves
           --dry-run         Preview undo/recovery operations
@@ -39,6 +39,7 @@ module SoftSort
           --date-folders    Add configured date folders to destinations
           --inspect-content Enable bounded local content evidence
           --collision POLICY  Use skip, review, or rename collision handling
+          --interval SECONDS  Polling interval for watch mode
       TEXT
     end
 
@@ -46,7 +47,7 @@ module SoftSort
 
     def parse_options
       options = { recursive: false, format: 'text', config: nil, apply: false, dry_run: false, transaction: nil, limit: nil, verbose: false,
-                  date_folders: false, inspect_content: false, collision: nil }
+                  date_folders: false, inspect_content: false, collision: nil, interval: 5 }
       parser = OptionParser.new do |o|
         o.on('--recursive') { options[:recursive] = true }
         o.on('--apply') { options[:apply] = true }
@@ -59,6 +60,7 @@ module SoftSort
         o.on('--date-folders') { options[:date_folders] = true }
         o.on('--inspect-content') { options[:inspect_content] = true }
         o.on('--collision POLICY') { |v| options[:collision] = v }
+        o.on('--interval SECONDS', Integer) { |v| options[:interval] = v }
       end
       parser.parse!(@argv)
       raise Error, 'format must be text or json' unless %w[text json].include?(options[:format])
@@ -109,6 +111,15 @@ module SoftSort
       when 'undo'
         result = UndoManager.new(root).undo(transaction_id: options[:transaction], dry_run: options[:dry_run])
         output(result, options)
+      when 'watch'
+        watcher = DirectoryWatcher.new(root, config: config, recursive: options[:recursive], interval: options[:interval])
+        watcher.run(apply: options[:apply]) do |items, apply|
+          if apply
+            output(Executor.new(root).execute(items, apply: true), options)
+          else
+            output({ root: File.expand_path(root), files: items }, options, text: PreviewFormatter.plan(items))
+          end
+        end
       end
     end
 

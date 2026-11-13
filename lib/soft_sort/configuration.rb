@@ -61,6 +61,8 @@ module SoftSort
       inspection = data.fetch('content_inspection', {})
       limit = inspection.fetch('max_bytes', 1_048_576)
       raise ConfigurationError, 'invalid content inspection size limit' unless limit.is_a?(Integer) && limit.positive?
+      ai = data.fetch('ai', {})
+      raise ConfigurationError, 'AI must be disabled or specify a provider' if ai.fetch('enabled', false) && ai.fetch('provider', 'none') == 'none'
     end
 
     def safe_destination?(value)

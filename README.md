@@ -35,6 +35,7 @@ soft-sort stats ~/Downloads --format json
 soft-sort explain ~/Downloads/example.pdf
 soft-sort plan ~/Downloads --date-folders --inspect-content
 soft-sort organize ~/Downloads --collision rename --apply
+soft-sort watch ~/Downloads --interval 5
 ```
 
 `scan` reports discovered, eligible, excluded, categorized, and sized files. `plan` reports source, proposed destination, type, context, rule, confidence, action, and warnings. `organize` previews by default and performs approved moves only with `--apply`. `--recursive` is opt-in. `--format json` emits only JSON on stdout; diagnostics go to stderr.
@@ -60,6 +61,8 @@ Projects are configured with aliases and optional type destinations. For example
 Date folders are disabled by default and can be enabled with `--date-folders` or YAML. Supported formats are `year`, `year_month`, and `year_month_day`; the default date source is a reliable available timestamp, falling back to modification time. Collision handling defaults to conservative review/conflict behavior. Set `organization.collision_policy` to `rename` only when deterministic `(1)`, `(2)` suffixes are desired.
 
 Bounded local content evidence is disabled by default. `--inspect-content` enables small, offline reads for plain text, Markdown, CSV, JSON, and PDF text; protected files are never inspected. The implementation does not execute documents, extract arbitrary archives, or upload content.
+
+`watch` uses polling and is preview-only unless `--apply` is supplied. It waits for files to remain size/timestamp-stable before planning them and inherits all scanner, project, sensitive-file, lock, collision, and journal safeguards. Stop it with Ctrl-C. The optional AI provider interface is disabled by default (`ai.enabled: false`) and has no network implementation; deterministic classification remains the only active fallback.
 
 Default destinations include `Images/Photos`, `Documents`, `Media/Videos`, `Media/Audio`, `Archives`, `Projects/Source`, `Installers`, and contextual destinations such as `Finance/Invoices`, `Images/Screenshots`, and `Documents/Reports`.
 
@@ -103,7 +106,7 @@ Destinations must be relative and cannot contain `..`. Safe YAML loading rejects
 
 SoftSort defaults to a dry run. With `organize --apply`, it creates only required destination folders and moves approved, non-sensitive, non-conflicting files. It verifies SHA-256 identity immediately before each move, uses a same-filesystem no-replace hard-link/unlink operation, refuses existing destinations, records append-only JSONL transactions under `.soft-sort`, and supports verified undo and recovery. It never follows symbolic links, leaves the selected root, executes scanned files, unpacks archives, transmits metadata, overwrites or deletes files, or moves protected credentials by default.
 
-Duplicate detection uses size grouping and streamed SHA-256 hashing but never deletes duplicates. Journal recovery is supported for interrupted move transactions; power-loss durability remains subject to the host filesystem's fsync guarantees. Content extraction, image EXIF inspection, watch mode, and AI providers remain disabled until they can be implemented with platform-specific safety guarantees. Extension/name classification can be wrong and should be reviewed.
+Duplicate detection uses size grouping and streamed SHA-256 hashing but never deletes duplicates. Journal recovery is supported for interrupted move transactions; power-loss durability remains subject to the host filesystem's fsync guarantees. Image metadata currently provides bounded PNG dimensions only; full EXIF, HEIC/WebP capture dates, DOCX extraction, OCR, and remote/local model execution remain disabled until they can be implemented with platform-specific safety guarantees. Extension/name classification can be wrong and should be reviewed.
 
 ## Project structure
 

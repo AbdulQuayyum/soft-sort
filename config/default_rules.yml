@@ -1,0 +1,29 @@
+version: 1
+organization:
+  mode: hybrid
+  recursive: false
+  dry_run: true
+safety:
+  follow_symlinks: false
+  include_hidden: false
+  overwrite: false
+categories:
+  Images: { extensions: [jpg, jpeg, png, gif, webp, heic, svg, tiff], destination: Images/Photos }
+  Documents: { extensions: [pdf, doc, docx, txt, rtf, odt], destination: Documents }
+  Spreadsheets: { extensions: [xls, xlsx, csv, ods], destination: Documents/Spreadsheets }
+  Presentations: { extensions: [ppt, pptx, odp], destination: Documents/Presentations }
+  Videos: { extensions: [mp4, mov, avi, mkv, webm], destination: Media/Videos }
+  Audio: { extensions: [mp3, wav, flac, aac, m4a], destination: Media/Audio }
+  Archives: { extensions: [zip, rar, 7z, tar, gz], destination: Archives }
+  Source Code: { extensions: [rb, py, js, jsx, ts, tsx, go, rs, java, html, css, json, yaml, yml], destination: Projects/Source }
+  Installers: { extensions: [dmg, pkg, exe, msi, deb, rpm], destination: Installers }
+context_rules:
+  - { name: invoices, keywords: [invoice, receipt], destination: Finance/Invoices, priority: 100 }
+  - { name: screenshots, keywords: [screenshot, screen_shot], destination: Images/Screenshots, priority: 90 }
+  - { name: project_giffy, keywords: [giffy, giffyride], destination: Projects/Giffy, priority: 80 }
+  - { name: resumes, keywords: [resume, cv], destination: Personal/Resumes, priority: 80 }
+  - { name: contracts, keywords: [contract, agreement], destination: Finance/Contracts, priority: 80 }
+  - { name: reports, keywords: [report], destination: Documents/Reports, priority: 70 }
+exclusions:
+  directories: [.git, node_modules, .venv, vendor/bundle, __pycache__]
+  extensions: [part, crdownload, download, tmp]

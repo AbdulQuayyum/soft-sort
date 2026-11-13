@@ -1,0 +1,20 @@
+# frozen_string_literal: true
+
+require 'json'
+require 'yaml'
+require 'optparse'
+require 'pathname'
+require_relative 'soft_sort/version'
+require_relative 'soft_sort/errors'
+require_relative 'soft_sort/configuration'
+require_relative 'soft_sort/scanning/file_metadata'
+require_relative 'soft_sort/scanning/directory_scanner'
+require_relative 'soft_sort/classification/type_classifier'
+require_relative 'soft_sort/classification/context_classifier'
+require_relative 'soft_sort/classification/classification_result'
+require_relative 'soft_sort/classification/rule_matcher'
+require_relative 'soft_sort/planning/organization_planner'
+require_relative 'soft_sort/reporting/preview_formatter'
+require_relative 'soft_sort/reporting/json_reporter'
+require_relative 'soft_sort/cli'
+module SoftSort; end

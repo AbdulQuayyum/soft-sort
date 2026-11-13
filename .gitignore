@@ -1,0 +1,4 @@
+.bundle/
+*.gem
+coverage/
+vendor/bundle/

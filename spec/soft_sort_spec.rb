@@ -1,0 +1,111 @@
+RSpec.describe SoftSort do
+  def config(data = nil)
+    data ? SoftSort::Configuration.new(data) : SoftSort::Configuration.load
+  end
+
+  def with_directory
+    Dir.mktmpdir('soft-sort-spec') { |dir| yield dir }
+  end
+
+  it 'scans empty and single-file directories without changing them' do
+    with_directory do |dir|
+      expect(SoftSort::DirectoryScanner.new(dir, config: config).scan[:files]).to be_empty
+      path = File.join(dir, 'invoice_2026.PDF')
+      File.write(path, 'x')
+      scan = SoftSort::DirectoryScanner.new(dir, config: config).scan
+      expect(scan[:files].first.size).to eq(1)
+      expect(File.read(path)).to eq('x')
+    end
+  end
+
+  it 'supports opt-in recursion and excludes hidden, temporary, and configured directories' do
+    with_directory do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'nested', 'node_modules'))
+      File.write(File.join(dir, 'nested', 'notes.txt'), 'x')
+      File.write(File.join(dir, 'nested', 'node_modules', 'ignored.js'), 'x')
+      File.write(File.join(dir, '.hidden.txt'), 'x')
+      File.write(File.join(dir, 'download.part'), 'x')
+      scan = SoftSort::DirectoryScanner.new(dir, config: config, recursive: true).scan
+      expect(scan[:files].map(&:relative_path)).to include('nested/notes.txt')
+      expect(scan[:files].find { |f| f.relative_path == 'nested/node_modules/ignored.js' }.eligible).to be(false)
+      expect(scan[:files].find { |f| f.relative_path == '.hidden.txt' }.eligible).to be(false)
+      expect(scan[:files].find { |f| f.relative_path == 'download.part' }.exclusion_reason).to include('temporary')
+    end
+  end
+
+  it 'does not follow symbolic links' do
+    with_directory do |dir|
+      File.write(File.join(dir, 'real.txt'), 'x')
+      File.symlink(File.join(dir, 'real.txt'), File.join(dir, 'link.txt'))
+      file = SoftSort::DirectoryScanner.new(dir, config: config).scan[:files].find { |f| f.filename == 'link.txt' }
+      expect(file.eligible).to be(false)
+      expect(file.exclusion_reason).to eq('symbolic link')
+    end
+  end
+
+  it 'classifies extensions case-insensitively and flags unknown files for review' do
+    with_directory do |dir|
+      %w[PHOTO.JPG mystery.xyz].each { |name| File.write(File.join(dir, name), 'x') }
+      files = SoftSort::DirectoryScanner.new(dir, config: config).scan[:files]
+      results = files.to_h { |file| [file.filename, SoftSort::RuleMatcher.new(config).classify(file)] }
+      expect(results['PHOTO.JPG'].type_category).to eq('Images')
+      expect(results['mystery.xyz'].requires_review).to be(true)
+    end
+  end
+
+  it 'resolves contextual rules by priority and marks equal priorities ambiguous' do
+    custom = {
+      'categories' => { 'Documents' => { 'extensions' => ['txt'], 'destination' => 'Documents' } },
+      'context_rules' => [
+        { 'name' => 'high', 'keywords' => ['invoice'], 'destination' => 'Finance', 'priority' => 100 },
+        { 'name' => 'low', 'keywords' => ['invoice'], 'destination' => 'Other', 'priority' => 10 }
+      ]
+    }
+    file = SoftSort::FileMetadata.new(filename: 'invoice.txt', extension: 'txt')
+    expect(SoftSort::RuleMatcher.new(config(custom)).classify(file).destination).to eq('Finance')
+    custom['context_rules'][1]['priority'] = 100
+    result = SoftSort::RuleMatcher.new(config(custom)).classify(file)
+    expect(result.requires_review).to be(true)
+    expect(result.matched_rule).to eq('ambiguous')
+  end
+
+  it 'plans deterministic destinations and skips already-organized files' do
+    with_directory do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'Documents'))
+      File.write(File.join(dir, 'invoice.txt'), 'a')
+      File.write(File.join(dir, 'Documents', 'already.txt'), 'c')
+      files = SoftSort::DirectoryScanner.new(dir, config: config, recursive: true).scan[:files]
+      first = SoftSort::OrganizationPlanner.new(dir, config).plan(files)
+      second = SoftSort::OrganizationPlanner.new(dir, config).plan(files)
+      expect(first).to eq(second)
+      expect(first.find { |item| item[:source] == 'Documents/already.txt' }[:action]).to eq('skip')
+    end
+  end
+
+  it 'rejects invalid configuration destinations and missing roots' do
+    expect { config('categories' => { 'x' => { 'destination' => '../outside' } }) }
+      .to raise_error(SoftSort::ConfigurationError)
+    expect { SoftSort::DirectoryScanner.new('/no/such/soft-sort-root', config: config) }
+      .to raise_error(SoftSort::ScanError)
+  end
+
+  it 'supports CLI help, version, scan, plan, and machine-readable JSON' do
+    with_directory do |dir|
+      File.write(File.join(dir, 'report.pdf'), 'x')
+      expect { expect(SoftSort::CLI.new(['--help']).run).to be_nil }.to output(/Usage/).to_stdout
+      expect { expect(SoftSort::CLI.new(['version']).run).to be_nil }.to output(/0\.1\.0/).to_stdout
+      expect { expect(SoftSort::CLI.new(['scan', dir]).run).to be_nil }.to output(/Eligible: 1/).to_stdout
+      expect { expect(SoftSort::CLI.new(['plan', dir, '--format', 'json']).run).to be_nil }
+        .to output(/"files"/).to_stdout
+    end
+  end
+
+  it 'returns nonzero CLI errors and does not move files' do
+    with_directory do |dir|
+      path = File.join(dir, 'file.txt')
+      File.write(path, 'unchanged')
+      expect(SoftSort::CLI.new(['scan', File.join(dir, 'missing')]).run).to eq(1)
+      expect(File.read(path)).to eq('unchanged')
+    end
+  end
+end

@@ -2,7 +2,7 @@
 
 module SoftSort
   class DirectoryScanner
-    DEFAULT_EXCLUDED = %w[.git node_modules .venv vendor/bundle __pycache__].freeze
+    DEFAULT_EXCLUDED = %w[.git node_modules .venv vendor/bundle __pycache__ .soft-sort].freeze
     DEFAULT_TEMP = %w[part crdownload download tmp].freeze
     attr_reader :root
 
@@ -28,11 +28,10 @@ module SoftSort
           reason = exclusion_reason(rel, path)
           stat = File.lstat(path)
           files << FileMetadata.new(absolute_path: path, relative_path: rel, filename: File.basename(path),
-                                    extension: File.extname(path).delete_prefix('.').downcase, size: stat.file? ? stat.size : 0, modified_at: stat.mtime, created_at: begin
-                                      stat.birthtime
-                                    rescue StandardError
-                                      nil
-                                    end, parent_directory: File.dirname(rel), eligible: reason.nil?, exclusion_reason: reason)
+                                    extension: File.extname(path).delete_prefix('.').downcase, size: stat.file? ? stat.size : 0,
+                                    modified_at: stat.mtime, created_at: birthtime(stat),
+                                    parent_directory: File.dirname(rel), eligible: reason.nil?, exclusion_reason: reason,
+                                    sensitive_reason: SensitiveFileDetector.reason(File.basename(path)))
         rescue SystemCallError => e
           warnings << "#{rel}: #{e.message}"
         end
@@ -43,6 +42,12 @@ module SoftSort
     end
 
     private
+
+    def birthtime(stat)
+      stat.birthtime
+    rescue NotImplementedError, SystemCallError
+      nil
+    end
 
     def exclusion_reason(rel, path)
       return 'symbolic link' if File.symlink?(path)

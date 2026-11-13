@@ -29,3 +29,5 @@ Style/Semicolon:
   Enabled: false
 Style/RedundantBegin:
   Enabled: false
+Metrics/ClassLength:
+  Enabled: false

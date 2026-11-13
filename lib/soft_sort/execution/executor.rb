@@ -8,14 +8,20 @@ module SoftSort
     end
 
     def execute(items, apply: false)
-      operations = items.map { |item| operation(item) }
-      record = @journal.create(@root, operations)
-      return record unless apply
+      RootLock.new(@root).synchronize do
+        operations = items.map { |item| operation(item) }
+        record = @journal.create(@root, operations)
+        return record unless apply
 
-      record['status'] = 'moving'
-      operations.each { |op| move(op) if op['action'] == 'move' }
-      record['status'] = operations.any? { |op| op['status'] == 'failed' } ? 'failed' : 'completed'
-      @journal.update(record)
+        record['status'] = 'in_progress'
+        @journal.update(record)
+        operations.each do |operation|
+          move(operation) if operation['action'] == 'move'
+          @journal.update(record)
+        end
+        record['status'] = operations.any? { |op| op['status'] == 'failed' } ? 'failed' : 'completed'
+        @journal.update(record)
+      end
     rescue SystemCallError => e
       record['status'] = 'failed' if record
       record['error'] = e.message if record
@@ -38,8 +44,11 @@ module SoftSort
       raise Error, 'destination already exists' if File.exist?(destination)
       raise Error, 'destination escapes selected root' unless destination.start_with?(@root + File::SEPARATOR)
 
+      raise Error, 'source or destination is a symbolic link' if File.symlink?(source) || File.symlink?(destination)
+
       FileUtils.mkdir_p(File.dirname(destination))
-      File.rename(source, destination)
+      File.link(source, destination)
+      File.unlink(source)
       op['status'] = 'moved'
     rescue StandardError => e
       op['status'] = 'failed'

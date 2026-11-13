@@ -8,6 +8,14 @@ module SoftSort
     end
 
     def undo(transaction_id: nil, dry_run: false)
+      return undo_locked(transaction_id: transaction_id, dry_run: dry_run) if dry_run
+
+      RootLock.new(@root).synchronize { undo_locked(transaction_id: transaction_id, dry_run: false) }
+    end
+
+    private
+
+    def undo_locked(transaction_id:, dry_run:)
       records = @journal.all.select { |record| record['root'] == @root }
       record = transaction_id ? records.reverse.find { |item| item['id'] == transaction_id } : records.reverse.find { |item| item['status'] == 'completed' }
       raise Error, 'transaction not found' unless record
@@ -21,7 +29,11 @@ module SoftSort
         elsif !File.file?(from) || File.exist?(to) || Digest::SHA256.file(from).hexdigest != op['sha256']
           { 'source' => op['destination'], 'destination' => op['source'], 'status' => 'conflict' }
         else
-          FileUtils.mkdir_p(File.dirname(to)); File.rename(from, to)
+          raise Error, 'undo source or destination is a symbolic link' if File.symlink?(from) || File.symlink?(to)
+
+          FileUtils.mkdir_p(File.dirname(to))
+          File.link(from, to)
+          File.unlink(from)
           { 'source' => op['destination'], 'destination' => op['source'], 'status' => 'undone' }
         end
       end

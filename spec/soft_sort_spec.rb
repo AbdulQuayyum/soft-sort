@@ -181,4 +181,35 @@ RSpec.describe SoftSort do
       expect(result.first['status']).to eq('conflict')
     end
   end
+
+  it 'reconciles a move completed before the journal could be finalized' do
+    with_directory do |dir|
+      source = File.join(dir, 'invoice.txt')
+      destination = File.join(dir, 'Finance', 'Invoices', 'invoice.txt')
+      File.write(source, 'invoice')
+      hash = Digest::SHA256.file(source).hexdigest
+      operation = { 'source' => 'invoice.txt', 'destination' => 'Finance/Invoices/invoice.txt', 'action' => 'move',
+                    'status' => 'pending', 'sha256' => hash, 'size' => 7 }
+      journal = SoftSort::TransactionJournal.new(dir)
+      record = journal.create(dir, [operation])
+      record['status'] = 'in_progress'
+      journal.update(record)
+      FileUtils.mkdir_p(File.dirname(destination))
+      File.rename(source, destination)
+      preview = SoftSort::RecoveryManager.new(dir).inspect
+      expect(preview.first['completed']).to eq(1)
+      applied = SoftSort::RecoveryManager.new(dir).apply
+      expect(applied.first['status']).to eq('recovered')
+    end
+  end
+
+  it 'reports malformed journal lines without discarding valid history' do
+    with_directory do |dir|
+      journal = SoftSort::TransactionJournal.new(dir)
+      journal.create(dir, [])
+      File.open(File.join(dir, '.soft-sort', 'transactions.jsonl'), 'a') { |file| file.write('{truncated\n') }
+      expect(journal.all.length).to eq(1)
+      expect(journal.warnings).to include(match(/malformed journal record/))
+    end
+  end
 end

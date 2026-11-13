@@ -75,10 +75,17 @@ module SoftSort
       when 'duplicates'
         scan = DirectoryScanner.new(root, config: config, recursive: options[:recursive]).scan
         output(DuplicateDetector.new(root).find(scan[:files]), options)
-      when 'history', 'recover'
+      when 'history'
         records = TransactionJournal.new(root).all
         records = records.last(options[:limit]) if options[:limit]
         output(records, options)
+      when 'recover'
+        reports = if options[:apply]
+                    RecoveryManager.new(root).apply(transaction_id: options[:transaction])
+                  else
+                    RecoveryManager.new(root).inspect(transaction_id: options[:transaction])
+                  end
+        output(reports, options, text: recovery_text(reports, options[:apply]))
       when 'undo'
         result = UndoManager.new(root).undo(transaction_id: options[:transaction], dry_run: options[:dry_run])
         output(result, options)
@@ -100,6 +107,22 @@ module SoftSort
       item = items.first
       raise Error, 'no eligible files found' unless item
       output(item.merge(root: File.expand_path(root)), options)
+    end
+
+    def recovery_text(reports, applied)
+      return 'No incomplete transactions require recovery.' if reports.empty?
+
+      lines = ['SoftSort Recovery Preview', '']
+      reports.each do |report|
+        lines << "Transaction: #{report['transaction']}"
+        lines << "Status: #{report['status']}"
+        lines << "Completed: #{report['completed']}"
+        lines << "Pending: #{report['pending']}"
+        lines << "Conflicts: #{report['conflicts']}"
+        lines << "Recoverable: #{report['recoverable']}"
+      end
+      lines << (applied ? 'Recovery actions applied.' : 'No files were modified.')
+      lines.join("\n")
     end
 
     def output(value, options, text: nil)

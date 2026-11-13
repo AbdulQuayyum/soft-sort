@@ -29,11 +29,15 @@ soft-sort organize ~/Downloads --apply
 soft-sort duplicates ~/Downloads --recursive --format json
 soft-sort history ~/Downloads --limit 20
 soft-sort undo ~/Downloads --dry-run
+soft-sort recover ~/Downloads
+soft-sort recover ~/Downloads --apply
 soft-sort stats ~/Downloads --format json
 soft-sort explain ~/Downloads/example.pdf
 ```
 
 `scan` reports discovered, eligible, excluded, categorized, and sized files. `plan` reports source, proposed destination, type, context, rule, confidence, action, and warnings. `organize` previews by default and performs approved moves only with `--apply`. `--recursive` is opt-in. `--format json` emits only JSON on stdout; diagnostics go to stderr.
+
+Recovery is read-only by default. It reconciles unfinished journal transactions against the actual source and destination files using stored SHA-256 identities. Use `recover --apply` only after reviewing the preview. Recovery refuses symlinks, missing identities, collisions, modified files, and operations outside the selected root.
 
 Example:
 
@@ -91,9 +95,9 @@ Destinations must be relative and cannot contain `..`. Safe YAML loading rejects
 
 ## Safety guarantees and limitations
 
-SoftSort defaults to a dry run. With `organize --apply`, it creates only required destination folders and moves approved, non-sensitive, non-conflicting files. It verifies SHA-256 identity immediately before each move, refuses existing destinations, records append-only JSONL transactions under `.soft-sort`, and supports verified undo. It never follows symbolic links, leaves the selected root, executes scanned files, unpacks archives, transmits metadata, overwrites or deletes files, or moves protected credentials by default.
+SoftSort defaults to a dry run. With `organize --apply`, it creates only required destination folders and moves approved, non-sensitive, non-conflicting files. It verifies SHA-256 identity immediately before each move, uses a same-filesystem no-replace hard-link/unlink operation, refuses existing destinations, records append-only JSONL transactions under `.soft-sort`, and supports verified undo and recovery. It never follows symbolic links, leaves the selected root, executes scanned files, unpacks archives, transmits metadata, overwrites or deletes files, or moves protected credentials by default.
 
-Duplicate detection uses size grouping and streamed SHA-256 hashing but never deletes duplicates. Content extraction, image EXIF inspection, watch mode, AI providers, and automatic crash recovery remain disabled until they can be implemented with platform-specific safety guarantees. Extension/name classification can be wrong and should be reviewed.
+Duplicate detection uses size grouping and streamed SHA-256 hashing but never deletes duplicates. Journal recovery is supported for interrupted move transactions; power-loss durability remains subject to the host filesystem's fsync guarantees. Content extraction, image EXIF inspection, watch mode, and AI providers remain disabled until they can be implemented with platform-specific safety guarantees. Extension/name classification can be wrong and should be reviewed.
 
 ## Project structure
 

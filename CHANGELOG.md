@@ -14,6 +14,9 @@
 - Added duplicate detection, statistics, and explainability commands.
 - Added expanded safety, execution, duplicate, and undo tests.
 - Documented intentionally disabled content, EXIF, AI, watch, and automatic recovery features.
+- Added root-scoped locking, synchronized/fsynced JSONL journal writes, per-operation progress persistence, and filesystem reconciliation for interrupted moves.
+- Added read-only and apply-mode `recover` command with hash-verified recovery reporting.
+- Hardened moves and undo with same-filesystem no-replace hard-link/unlink operations and symlink rejection.
 
 ## 0.1.0 - 2026-10-16
 

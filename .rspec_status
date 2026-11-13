@@ -1,17 +1,19 @@
 example_id                     | status | run_time        |
 ------------------------------ | ------ | --------------- |
-./spec/soft_sort_spec.rb[1:1]  | passed | 0.00611 seconds |
-./spec/soft_sort_spec.rb[1:2]  | passed | 0.00428 seconds |
-./spec/soft_sort_spec.rb[1:3]  | passed | 0.00178 seconds |
-./spec/soft_sort_spec.rb[1:4]  | passed | 0.00292 seconds |
-./spec/soft_sort_spec.rb[1:5]  | passed | 0.00899 seconds |
-./spec/soft_sort_spec.rb[1:6]  | passed | 0.00296 seconds |
-./spec/soft_sort_spec.rb[1:7]  | passed | 0.00269 seconds |
-./spec/soft_sort_spec.rb[1:8]  | passed | 0.00006 seconds |
-./spec/soft_sort_spec.rb[1:9]  | passed | 0.0044 seconds  |
-./spec/soft_sort_spec.rb[1:10] | passed | 0.00162 seconds |
-./spec/soft_sort_spec.rb[1:11] | passed | 0.00376 seconds |
-./spec/soft_sort_spec.rb[1:12] | passed | 0.00142 seconds |
-./spec/soft_sort_spec.rb[1:13] | passed | 0.00642 seconds |
-./spec/soft_sort_spec.rb[1:14] | passed | 0.00274 seconds |
-./spec/soft_sort_spec.rb[1:15] | passed | 0.00438 seconds |
+./spec/soft_sort_spec.rb[1:1]  | passed | 0.01231 seconds |
+./spec/soft_sort_spec.rb[1:2]  | passed | 0.01307 seconds |
+./spec/soft_sort_spec.rb[1:3]  | passed | 0.00696 seconds |
+./spec/soft_sort_spec.rb[1:4]  | passed | 0.00681 seconds |
+./spec/soft_sort_spec.rb[1:5]  | passed | 0.02539 seconds |
+./spec/soft_sort_spec.rb[1:6]  | passed | 0.00597 seconds |
+./spec/soft_sort_spec.rb[1:7]  | passed | 0.00853 seconds |
+./spec/soft_sort_spec.rb[1:8]  | passed | 0.00012 seconds |
+./spec/soft_sort_spec.rb[1:9]  | passed | 0.00892 seconds |
+./spec/soft_sort_spec.rb[1:10] | passed | 0.00312 seconds |
+./spec/soft_sort_spec.rb[1:11] | passed | 0.00998 seconds |
+./spec/soft_sort_spec.rb[1:12] | passed | 0.00269 seconds |
+./spec/soft_sort_spec.rb[1:13] | passed | 0.03578 seconds |
+./spec/soft_sort_spec.rb[1:14] | passed | 0.00866 seconds |
+./spec/soft_sort_spec.rb[1:15] | passed | 0.01904 seconds |
+./spec/soft_sort_spec.rb[1:16] | passed | 0.00691 seconds |
+./spec/soft_sort_spec.rb[1:17] | passed | 0.00315 seconds |

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1 - 2026-11-14
+
+- Expanded classification for raw images, email, playlists, 3D models, disk images, certificates, and dependency lockfiles.
+- Added configurable content classification rules for finance, legal, personal, education, travel, and work documents.
+- Preserved review handling for unknown or ambiguous files.
+
 ## 1.0.0 - 2026-11-13
 
 - Fixed Ruby 3.2 development dependency compatibility by constraining Parallel to the 1.27 series.

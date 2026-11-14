@@ -14,29 +14,62 @@ safety:
   protect_existing_project_structures: true
 categories:
   Images: { extensions: [jpg, jpeg, png, gif, webp, heic, svg, tiff], destination: Images/Photos }
+  Raw Images: { extensions: [raw, cr2, cr3, nef, arw, dng, raf, orf], destination: Images/Raw }
   Documents: { extensions: [pdf, doc, docx, txt, rtf, odt, epub, mobi, azw, azw3], destination: Documents }
   Spreadsheets: { extensions: [xls, xlsx, csv, ods], destination: Documents/Spreadsheets }
   Videos: { extensions: [mp4, mov, avi, mkv, webm], destination: Media/Videos }
   Audio: { extensions: [mp3, wav, flac, aac, m4a], destination: Media/Audio }
+  Subtitles: { extensions: [srt, ass, vtt, ssa], destination: Media/Subtitles }
   Archives: { extensions: [zip, rar, 7z, tar, gz, bz2, xz, tgz, iso, cab], destination: Archives }
+  Email: { extensions: [eml, msg, emlx, mbox], destination: Documents/Email }
+  Playlists: { extensions: [m3u, m3u8, pls, xspf], destination: Media/Playlists }
+  Backups: { extensions: [bak, backup, old, dump], destination: Backups }
+  Logs: { extensions: [log, trace], destination: Documents/Logs }
+  Web Assets: { extensions: [html, htm, css, scss, sass, less], destination: Projects/Web }
+  Data: { extensions: [jsonl, ndjson, parquet, avro, xml], destination: Data }
+  Contacts and Calendars: { extensions: [vcf, ics, ifb], destination: Personal/Calendar }
   Development: { extensions: [rb, py, go, js, jsx, ts, tsx, rs, java, c, h, cpp, cs, php, swift, kt, dart, lua, r, sql], destination: Projects/Source }
   Documentation: { extensions: [md, markdown, rst, adoc, tex], destination: Documents/Documentation }
   Development Scripts: { extensions: [sh, bash, zsh, fish, ps1, bat, cmd], destination: Projects/Source/Scripts }
   Configuration: { extensions: [json, yaml, yml, toml, xml, plist, ini, conf, cfg, properties, env], destination: Projects/Source/Configuration }
   Design: { extensions: [fig, sketch, ai, eps, psd, xd, indd], destination: Design }
+  3D Models: { extensions: [blend, 3ds, max, fbx, glb, gltf, ply], destination: Design/3D }
   Fonts: { extensions: [ttf, otf, woff, woff2], destination: Fonts }
   Databases: { extensions: [db, sqlite, sqlite3, sqlitedb, mdb], destination: Data/Databases }
   CAD: { extensions: [dwg, dxf, step, stp, iges, igs, stl, obj], destination: Design/CAD }
   Source Code: { extensions: [rb, py, js, jsx, ts, tsx, go, rs, java, html, css], destination: Projects/Source }
   Installers: { extensions: [dmg, pkg, exe, msi, deb, rpm, appimage], destination: Installers }
+  Disk Images: { extensions: [img, toast, vhd, vhdx, vmdk], destination: Archives/Disk Images }
+  Certificates: { extensions: [pem, crt, cer, der, p12, pfx], destination: Security/Certificates }
+  Lockfiles: { extensions: [lock], destination: Projects/Dependencies }
   Presentations: { extensions: [ppt, pptx, odp, key], destination: Documents/Presentations }
   Graphics: { extensions: [svg, psd, ai, eps], destination: Images/Graphics }
 context_rules:
-  - { name: invoices, keywords: [invoice, receipt], destination: Finance/Invoices, priority: 100 }
+  - { name: invoices, keywords: [invoice], destination: Finance/Invoices, priority: 100 }
+  - { name: receipts, keywords: [receipt, till, purchase], destination: Finance/Receipts, priority: 95 }
+  - { name: banking, keywords: [bank, statement, transaction], destination: Finance/Banking, priority: 95 }
+  - { name: taxes, keywords: [tax, tax-return, vat, hmrc], destination: Finance/Taxes, priority: 95 }
+  - { name: budgets, keywords: [budget, forecast, expense], destination: Finance/Budgets, priority: 85 }
   - { name: screenshots, keywords: [screenshot, screen_shot], destination: Images/Screenshots, priority: 90 }
+  - { name: photos, keywords: [photo, photograph, camera, dsc], destination: Images/Photos, priority: 60 }
+  - { name: videos, keywords: [video, recording, screen-recording], destination: Media/Videos, priority: 60 }
+  - { name: music, keywords: [music, song, album, podcast], destination: Media/Audio, priority: 60 }
   - { name: project_giffy, keywords: [giffy, giffyride], destination: Projects/Giffy, priority: 80 }
+  - { name: projects, keywords: [project, source, repository, repo], destination: Projects/Unsorted, priority: 50 }
   - { name: resumes, keywords: [resume, cv], destination: Personal/Resumes, priority: 80 }
-  - { name: contracts, keywords: [contract, agreement], destination: Finance/Contracts, priority: 80 }
+  - { name: career, keywords: [cover-letter, portfolio, interview, offer-letter], destination: Personal/Career, priority: 80 }
+  - { name: contracts, keywords: [contract, agreement, nda, lease], destination: Legal/Contracts, priority: 80 }
+  - { name: legal, keywords: [legal, affidavit, court, solicitor], destination: Legal, priority: 75 }
+  - { name: medical, keywords: [medical, doctor, hospital, prescription, lab], destination: Personal/Medical, priority: 80 }
+  - { name: insurance, keywords: [insurance, policy, premium, claim], destination: Personal/Insurance, priority: 75 }
+  - { name: travel, keywords: [flight, itinerary, hotel, booking, boarding], destination: Personal/Travel, priority: 75 }
+  - { name: education, keywords: [course, lecture, syllabus, assignment, thesis], destination: Documents/Education, priority: 70 }
+  - { name: meetings, keywords: [meeting, agenda, minutes, action-items], destination: Documents/Meetings, priority: 70 }
+  - { name: recipes, keywords: [recipe, ingredients, cooking, dinner], destination: Personal/Recipes, priority: 65 }
+  - { name: home, keywords: [rent, mortgage, utility, electricity, water], destination: Personal/Home, priority: 65 }
+  - { name: family, keywords: [family, wedding, birthday, memorial], destination: Personal/Family, priority: 60 }
+  - { name: backups, keywords: [backup, restore, snapshot, archive], destination: Backups, priority: 55 }
+  - { name: logs, keywords: [log, error, debug, trace], destination: Documents/Logs, priority: 55 }
   - { name: reports, keywords: [report], destination: Documents/Reports, priority: 70 }
 projects:
   civicwatch:
@@ -66,6 +99,19 @@ content_inspection:
   enabled: false
   max_bytes: 1048576
   min_signals: 2
+  rules:
+    - { name: invoice_content, keywords: [invoice, billing, amount, due], destination: Finance/Invoices, category: Documents }
+    - { name: receipt_content, keywords: [receipt, subtotal, tax, total], destination: Finance/Receipts, category: Documents }
+    - { name: banking_content, keywords: [bank, statement, account, balance, transaction], destination: Finance/Banking, category: Documents }
+    - { name: tax_content, keywords: [tax, taxpayer, deduction, income, return], destination: Finance/Taxes, category: Documents }
+    - { name: contract_content, keywords: [agreement, contract, parties, obligations], destination: Legal/Contracts, category: Documents }
+    - { name: insurance_content, keywords: [insurance, policy, premium, coverage, claim], destination: Personal/Insurance, category: Documents }
+    - { name: medical_content, keywords: [patient, diagnosis, prescription, medication, physician], destination: Personal/Medical, category: Documents }
+    - { name: education_content, keywords: [course, lecture, syllabus, assignment, student], destination: Documents/Education, category: Documents }
+    - { name: research_content, keywords: [research, methodology, references, abstract], destination: Documents/Education/Research, category: Documents }
+    - { name: meeting_content, keywords: [meeting, agenda, attendees, action, minutes], destination: Documents/Meetings, category: Documents }
+    - { name: travel_content, keywords: [flight, itinerary, hotel, reservation, boarding], destination: Personal/Travel, category: Documents }
+    - { name: job_search_content, keywords: [resume, curriculum, vitae, experience, qualifications], destination: Personal/Career, category: Documents }
 ai:
   enabled: false
   provider: none

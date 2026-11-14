@@ -23,4 +23,4 @@ jobs:
       - run: bundle exec ruby bin/soft-sort --help
       - run: bundle exec ruby bin/soft-sort version
       - run: gem build soft-sort.gemspec
-      - run: ruby script/installed_gem_smoke.rb soft-sort-1.0.0.gem
+      - run: ruby script/installed_gem_smoke.rb soft-sort-1.0.1.gem

@@ -69,6 +69,40 @@ RSpec.describe SoftSort do
     end
   end
 
+  it 'classifies common personal, legal, and finance contexts beyond invoices' do
+    names = %w[bank_statement.pdf medical_record.pdf lease_agreement.pdf flight_itinerary.pdf course_notes.pdf]
+    files = names.map { |name| SoftSort::FileMetadata.new(filename: name, extension: 'pdf') }
+    results = files.to_h { |file| [file.filename, SoftSort::RuleMatcher.new(config).classify(file)] }
+    expect(results['bank_statement.pdf'].destination).to eq('Finance/Banking')
+    expect(results['medical_record.pdf'].destination).to eq('Personal/Medical')
+    expect(results['lease_agreement.pdf'].destination).to eq('Legal/Contracts')
+    expect(results['flight_itinerary.pdf'].destination).to eq('Personal/Travel')
+    expect(results['course_notes.pdf'].destination).to eq('Documents/Education')
+  end
+
+  it 'recognizes media, data, backup, and calendar formats' do
+    names = %w[show.srt export.parquet snapshot.bak event.ics site.scss]
+    files = names.map { |name| SoftSort::FileMetadata.new(filename: name, extension: name.split('.').last) }
+    results = files.to_h { |file| [file.filename, SoftSort::RuleMatcher.new(config).classify(file)] }
+    expect(results['show.srt'].type_category).to eq('Subtitles')
+    expect(results['export.parquet'].type_category).to eq('Data')
+    expect(results['snapshot.bak'].type_category).to eq('Backups')
+    expect(results['event.ics'].type_category).to eq('Contacts and Calendars')
+    expect(results['site.scss'].destination).to eq('Projects/Web')
+  end
+
+  it 'recognizes additional professional and system file formats' do
+    names = %w[camera.raw message.eml model.blend archive.vhd certificate.p12 package.lock]
+    files = names.map { |name| SoftSort::FileMetadata.new(filename: name, extension: name.split('.').last) }
+    results = files.to_h { |file| [file.filename, SoftSort::RuleMatcher.new(config).classify(file)] }
+    expect(results['camera.raw'].type_category).to eq('Raw Images')
+    expect(results['message.eml'].type_category).to eq('Email')
+    expect(results['model.blend'].type_category).to eq('3D Models')
+    expect(results['archive.vhd'].type_category).to eq('Disk Images')
+    expect(results['certificate.p12'].type_category).to eq('Certificates')
+    expect(results['package.lock'].type_category).to eq('Lockfiles')
+  end
+
   it 'groups configured project files into project type subfolders' do
     custom = YAML.safe_load(File.read(File.expand_path('../config/default_rules.yml', __dir__)))
     custom['projects'] = { 'civicwatch' => { 'aliases' => ['civicwatch'], 'destination' => 'Projects/CivicWatch',
@@ -130,7 +164,7 @@ RSpec.describe SoftSort do
     with_directory do |dir|
       File.write(File.join(dir, 'report.pdf'), 'x')
       expect { expect(SoftSort::CLI.new(['--help']).run).to be_nil }.to output(/Usage/).to_stdout
-      expect { expect(SoftSort::CLI.new(['version']).run).to be_nil }.to output(/1\.0\.0/).to_stdout
+      expect { expect(SoftSort::CLI.new(['version']).run).to be_nil }.to output(/1\.0\.1/).to_stdout
       expect { expect(SoftSort::CLI.new(['scan', dir]).run).to be_nil }.to output(/Eligible: 1/).to_stdout
       expect { expect(SoftSort::CLI.new(['plan', dir, '--format', 'json']).run).to be_nil }
         .to output(/"files"/).to_stdout

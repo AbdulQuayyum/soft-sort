@@ -25,7 +25,7 @@ Processing stays on your computer and works offline after installation. You choo
 - **Automation:** polling-based watch mode, consecutive-poll stability checks that provide basic debouncing, preview output by default, and optional `watch --apply`.
 - **Developer workflows:** JSON output, Ruby 3.2+ support, CI on Ubuntu/macOS/Windows, and a disabled AI provider interface. Model-based AI classification is not implemented.
 
-Default categories cover documents/e-books, images, video, audio, spreadsheets, presentations, archives, installers, development files, configuration, fonts, design, CAD, and databases.
+Default categories cover documents/e-books, images, video, audio, spreadsheets, presentations, archives, installers, development files, configuration, fonts, design, CAD, and databases. Context rules additionally recognize finance (invoices, receipts, banking, taxes, and budgets), legal, career, medical, insurance, travel, education, meetings, screenshots, media, projects, and reports. Optional local content inspection provides the same kinds of routing from document text when filenames are not descriptive.
 
 See [Known limitations](#known-limitations) before applying changes to important files.
 
@@ -312,6 +312,9 @@ content_inspection:
   enabled: false
   max_bytes: 1048576
   min_signals: 2
+  rules:
+    - { name: banking_content, keywords: [bank, statement, account, balance], destination: Finance/Banking, category: Documents }
+    - { name: medical_content, keywords: [patient, diagnosis, prescription], destination: Personal/Medical, category: Documents }
 
 ai:
   enabled: false
@@ -319,6 +322,8 @@ ai:
 ```
 
 Use relative destinations inside the selected root, such as `Finance/Invoices`. Category/context destinations are checked for absolute paths and `..` traversal. Use the same restrictions for project destinations and filename rules; validation does not cover every nested field, so use trusted configurations and inspect the plan.
+
+Content rules use `name`, `keywords`, `destination`, and `category`. A rule matches when at least `min_signals` keywords occur in the bounded local text sample; content inspection is disabled by default.
 
 Some accepted settings are descriptive rather than CLI controls in v1.0.0: use `--recursive` to enable recursion and `--apply` to execute organization. YAML `organization.recursive` and `organization.dry_run` do not control those CLI decisions. Keep `follow_symlinks: false` and `overwrite: false`; setting them to true does not enable supported symlink traversal or overwriting.
 

@@ -30,7 +30,7 @@ module SoftSort
 
       content = File.open(file.absolute_path, 'rb') { |stream| stream.read(@max_bytes) }.to_s.force_encoding(Encoding::UTF_8).scrub.downcase
       match = @rules.map { |rule| [rule, Array(rule['keywords']).count { |keyword| content.include?(keyword.to_s.downcase) }] }
-                   .select { |_rule, signals| signals >= @min_signals }.max_by(&:last)
+                    .select { |_rule, signals| signals >= @min_signals }.max_by(&:last)
       return nil unless match
 
       rule, signals = match
